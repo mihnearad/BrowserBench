@@ -4,7 +4,7 @@ A comprehensive tool to measure and compare real-world power consumption of diff
 
 ## Overview
 
-This benchmark simulates realistic browsing behavior (tab switching, scrolling) while measuring precise power consumption using macOS's built-in `powermetrics` utility. The tool provides statistical analysis to compare browser efficiency and battery life impact.
+This benchmark simulates browsing behavior (tab switching, scrolling) while measuring  power consumption using macOS's built-in `powermetrics` utility. The tool provides analysis to compare browser efficiency and battery life impact.
 
 ## Features
 

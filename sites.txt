@@ -3,8 +3,7 @@ https://www.bbc.com
 https://www.reddit.com
 https://www.nytimes.com
 https://news.ycombinator.com
-https://www.wikipedia.org
+https://en.wikipedia.org/wiki/Linux
 https://www.bloomberg.com
-https://www.theverge.com
-https://www.instagram.com
+https://www.instagram.com/verge/?hl=en
 https://www.amazon.com
