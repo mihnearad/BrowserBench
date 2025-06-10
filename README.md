@@ -44,17 +44,12 @@ The benchmark simulates six realistic browsing behaviors:
    pip install pandas
    ```
 
-2. **Test browser automation** (optional but recommended):
-   ```bash
-   python test_browser_automation.py
-   ```
-
-3. **Run the benchmark** (requires sudo for power monitoring):
+2. **Run the benchmark** (requires sudo for power monitoring):
    ```bash
    sudo python browser_bench.py
    ```
 
-4. **Generate detailed report**:
+3. **Generate detailed report**:
    ```bash
    python report.py
    ```
@@ -64,7 +59,6 @@ The benchmark simulates six realistic browsing behaviors:
 - `browser_bench.py` - Enhanced benchmark script with advanced browsing patterns
 - `sites.txt` - List of websites to test with (customizable)
 - `report.py` - Enhanced analysis and reporting tool with battery life estimates
-- `test_browser_automation.py` - Browser automation test script
 - `browser_power_results.csv` - Generated power measurement data (created after benchmark)
 
 ## Sample Results
@@ -137,7 +131,6 @@ Customize test websites by editing `sites.txt` (one URL per line).
 ## Troubleshooting
 
 - **Permission Issues**: Ensure you run with `sudo` for powermetrics access
-- **Browser Automation**: Test with `python test_browser_automation.py` first
 - **Empty Results**: Check that browsers are installed and accessible
 - **High CPU Usage**: Normal during testing due to active browsing simulation
 
