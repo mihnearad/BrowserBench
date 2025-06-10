@@ -1,6 +1,13 @@
+#!/usr/bin/env python3
+"""
+Enhanced Browser Power Benchmark with Advanced Browsing Simulation
+
+This tool measures real-world power consumption of different web browsers on macOS
+by simulating various realistic browsing behaviors and patterns.
+"""
+
 import subprocess
 import time
-import webbrowser
 import os
 import random
 from threading import Thread
@@ -8,23 +15,25 @@ from threading import Thread
 # Configuration
 BROWSERS = {
     "Safari": "safari",
-    "Brave": "brave-browser"  # assumes Brave is installed from brew
+    "Brave": "brave-browser"
 }
-POWERMETRICS_DURATION_SEC = 120  # Increased to 2 minutes for better measurement
-TAB_ACTIVITY_DURATION = 90  # Duration to actively use tabs (scrolling, focusing)
+POWERMETRICS_DURATION_SEC = 120  # 2 minutes of power monitoring
+TAB_ACTIVITY_DURATION = 90  # 90 seconds of active browsing
 SITES_FILE = "sites.txt"
 OUTPUT_FILE = "browser_power_results.csv"
 
-# Define different browsing patterns
+# Enhanced browsing patterns
 BROWSING_PATTERNS = [
-    "quick_scan",    # Fast scrolling through content
-    "detailed_read", # Slower, more deliberate scrolling
-    "search_mode",   # Cmd+F searching behavior
-    "click_links"    # Clicking on links within pages
+    "quick_scan",      # Fast scrolling through content
+    "detailed_read",   # Slower, deliberate reading
+    "search_mode",     # Using Cmd+F to search
+    "link_navigation", # Tab navigation between links
+    "reload_page",     # Refreshing content
+    "zoom_adjust"      # Changing zoom levels
 ]
 
-# Open 10 tabs in a browser using osascript (AppleScript)
 def open_tabs_in_browser(browser_name, sites):
+    """Open multiple tabs with specified websites"""
     print(f"Opening {len(sites)} tabs in {browser_name}...")
     if browser_name == "Safari":
         script = 'tell application "Safari" to activate\n'
@@ -40,378 +49,232 @@ def open_tabs_in_browser(browser_name, sites):
     subprocess.run(["osascript", "-e", script])
     print(f"Tabs opened in {browser_name}.")
 
-# Simulate active browsing by focusing and scrolling through tabs
+def get_browsing_behavior(browser_name, pattern):
+    """Generate AppleScript for different browsing behaviors"""
+    browser_process = "Safari" if browser_name == "Safari" else "Brave Browser"
+    
+    behaviors = {
+        "quick_scan": f'''
+        tell application "System Events"
+            tell process "{browser_process}"
+                key code 125 using {{command down}}  -- Page Down
+                delay 0.8
+                key code 125 using {{command down}}  -- Page Down again
+                delay 0.8
+                key code 125 using {{command down}}  -- Page Down third time
+                delay 0.5
+                key code 126 using {{command down}}  -- Page Up
+                delay 0.5
+            end tell
+        end tell
+        ''',
+        
+        "detailed_read": f'''
+        tell application "System Events"
+            tell process "{browser_process}"
+                key code 125  -- Small scroll down
+                delay 2.5
+                key code 125  -- Small scroll down
+                delay 2.5
+                key code 125  -- Small scroll down
+                delay 2.0
+                key code 126  -- Small scroll up
+                delay 1.5
+                key code 126  -- Small scroll up
+                delay 1.5
+            end tell
+        end tell
+        ''',
+        
+        "search_mode": f'''
+        tell application "System Events"
+            tell process "{browser_process}"
+                key code 3 using {{command down}}  -- Cmd+F (Find)
+                delay 1.0
+                keystroke "news"  -- Type search term
+                delay 1.0
+                key code 36  -- Enter
+                delay 1.0
+                key code 53  -- Escape to close find
+                delay 0.5
+                key code 125 using {{command down}}  -- Page Down
+                delay 1.5
+            end tell
+        end tell
+        ''',
+        
+        "link_navigation": f'''
+        tell application "System Events"
+            tell process "{browser_process}"
+                key code 48  -- Tab to navigate to links
+                delay 0.8
+                key code 48  -- Tab again
+                delay 0.8
+                key code 48  -- Tab again
+                delay 0.8
+                key code 125  -- Small scroll
+                delay 1.0
+                key code 48  -- Tab to more links
+                delay 0.8
+            end tell
+        end tell
+        ''',
+        
+        "reload_page": f'''
+        tell application "System Events"
+            tell process "{browser_process}"
+                key code 15 using {{command down}}  -- Cmd+R (Reload)
+                delay 3.0  -- Wait for page to reload
+                key code 125 using {{command down}}  -- Page Down after reload
+                delay 1.5
+            end tell
+        end tell
+        ''',
+        
+        "zoom_adjust": f'''
+        tell application "System Events"
+            tell process "{browser_process}"
+                key code 24 using {{command down}}  -- Cmd++ (Zoom in)
+                delay 1.0
+                key code 125  -- Scroll with new zoom
+                delay 1.5
+                key code 27 using {{command down}}  -- Cmd+- (Zoom out)
+                delay 1.0
+                key code 125  -- Scroll with reset zoom
+                delay 1.5
+            end tell
+        end tell
+        '''
+    }
+    
+    return behaviors.get(pattern, behaviors["quick_scan"])
+
 def simulate_active_browsing(browser_name, num_tabs, duration_sec):
-    """
-    Cycles through tabs and scrolls to simulate realistic browsing behavior
-    """
-    print(f"Starting active browsing simulation for {browser_name}...")
+    """Enhanced browsing simulation with multiple realistic behaviors"""
+    print(f"Starting enhanced browsing simulation for {browser_name}...")
     
     start_time = time.time()
     tab_index = 1
+    iteration = 0
     
     while time.time() - start_time < duration_sec:
         try:
-            # Choose a random browsing pattern (simplified)
-            pattern = random.choice(["quick_scan", "detailed_read", "search_mode"])
+            iteration += 1
             
+            # Focus on current tab
             if browser_name == "Safari":
-                # Focus on current tab
                 focus_script = f'''
                 tell application "Safari"
                     activate
                     set current tab of window 1 to tab {tab_index} of window 1
                 end tell
                 '''
-                
-                # Simplified scrolling patterns
-                if pattern == "quick_scan":
-                    scroll_script = '''
-                    tell application "System Events"
-                        tell process "Safari"
-                            key code 125 using {command down}  -- Page Down
-                            delay 1.0
-                            key code 125 using {command down}  -- Page Down again
-                            delay 1.0
-                            key code 126 using {command down}  -- Page Up
-                            delay 1.0
-                        end tell
-                    end tell
-                    '''
-                elif pattern == "detailed_read":
-                    scroll_script = '''
-                    tell application "System Events"
-                        tell process "Safari"
-                            key code 125  -- Small scroll down
-                            delay 2.0
-                            key code 125  -- Small scroll down
-                            delay 2.0
-                            key code 126  -- Small scroll up
-                            delay 1.5
-                        end tell
-                    end tell
-                    '''
-                else:  # search_mode
-                    scroll_script = '''
-                    tell application "System Events"
-                        tell process "Safari"
-                            key code 3 using {command down}  -- Cmd+F
-                            delay 1.0
-                            key code 53  -- Escape
-                            delay 0.5
-                            key code 125 using {command down}  -- Page Down
-                            delay 1.5
-                        end tell
-                    end tell
-                    '''
-                
-            elif browser_name == "Brave":
-                # Focus on current tab
+            else:  # Brave
                 focus_script = f'''
                 tell application "Brave Browser"
                     activate
                     set active tab index of window 1 to {tab_index}
                 end tell
                 '''
-                
-                # Simplified scrolling patterns
-                if pattern == "quick_scan":
-                    scroll_script = '''
-                    tell application "System Events"
-                        tell process "Brave Browser"
-                            key code 125 using {command down}  -- Page Down
-                            delay 1.0
-                            key code 125 using {command down}  -- Page Down again
-                            delay 1.0
-                            key code 126 using {command down}  -- Page Up
-                            delay 1.0
-                        end tell
-                    end tell
-                    '''
-                elif pattern == "detailed_read":
-                    scroll_script = '''
-                    tell application "System Events"
-                        tell process "Brave Browser"
-                            key code 125  -- Small scroll down
-                            delay 2.0
-                            key code 125  -- Small scroll down
-                            delay 2.0
-                            key code 126  -- Small scroll up
-                            delay 1.5
-                        end tell
-                    end tell
-                    '''
-                else:  # search_mode
-                    scroll_script = '''
-                    tell application "System Events"
-                        tell process "Brave Browser"
-                            key code 3 using {command down}  -- Cmd+F
-                            delay 1.0
-                            key code 53  -- Escape
-                            delay 0.5
-                            key code 125 using {command down}  -- Page Down
-                            delay 1.5
-                        end tell
-                    end tell
-                    '''
             
-            # Execute the scripts
-            subprocess.run(["osascript", "-e", focus_script], capture_output=True, text=True)
-            time.sleep(random.uniform(0.5, 1.2))  # Variable pause after tab switch
-            subprocess.run(["osascript", "-e", scroll_script], capture_output=True, text=True)
-            
-            # Move to next tab (cycle through all tabs)
-            tab_index = (tab_index % num_tabs) + 1
-            
-            # Variable wait time based on pattern
-            if pattern == "detailed_read":
-                time.sleep(random.uniform(4, 6))
-            elif pattern == "quick_scan":
-                time.sleep(random.uniform(2, 3))
+            # Choose browsing pattern based on iteration to ensure variety
+            if iteration % 8 == 0:
+                pattern = "reload_page"  # Occasionally reload pages
+            elif iteration % 6 == 0:
+                pattern = "search_mode"  # Occasionally search
+            elif iteration % 4 == 0:
+                pattern = "zoom_adjust"  # Occasionally adjust zoom
             else:
-                time.sleep(random.uniform(3, 4))
+                pattern = random.choice(["quick_scan", "detailed_read", "link_navigation"])
             
-        except Exception as e:
-            print(f"Error during browsing simulation: {e}")
-            time.sleep(1)
-    
-    print(f"Active browsing simulation completed for {browser_name}.")
-    
-    while time.time() - start_time < duration_sec:
-        try:
-            if browser_name == "Safari":
-                # Focus on current tab
-                focus_script = f'''
-                tell application "Safari"
-                    activate
-                    set current tab of window 1 to tab {tab_index} of window 1
-                end tell
-                '''
-                
-                # Choose a random browsing pattern
-                pattern = random.choice(BROWSING_PATTERNS)
-                
-                if pattern == "quick_scan":
-                    # Quick scrolling down the page
-                    scroll_script = '''
-                    tell application "System Events"
-                        tell process "Safari"
-                            key code 125 using {command down}  -- Page Down
-                            delay 0.5
-                            key code 125 using {command down}  -- Page Down again
-                            delay 0.5
-                        end tell
-                    end tell
-                    '''
-                elif pattern == "detailed_read":
-                    # Slow scrolling for detailed reading
-                    scroll_script = '''
-                    tell application "System Events"
-                        tell process "Safari"
-                            key code 125 using {command down}  -- Page Down
-                            delay 2.0
-                            key code 126 using {command down}  -- Page Up
-                            delay 2.0
-                        end tell
-                    end tell
-                    '''
-                elif pattern == "search_mode":
-                    # Simulate Cmd+F searching behavior
-                    scroll_script = '''
-                    tell application "System Events"
-                        tell process "Safari"
-                            keystroke "f" using {command down}  -- Open search
-                            delay 1.0
-                            keystroke "example"  -- Type search query
-                            delay 1.0
-                            key code 36  -- Press Enter
-                            delay 1.0
-                            key code 125 using {command down}  -- Page Down
-                            delay 1.0
-                            key code 126 using {command down}  -- Page Up
-                            delay 1.0
-                        end tell
-                    end tell
-                    '''
-                elif pattern == "click_links":
-                    # Simulate clicking on links
-                    scroll_script = '''
-                    tell application "System Events"
-                        tell process "Safari"
-                            -- Click on a link (assuming the link is in the middle of the page)
-                            mouse click at {300, 500}
-                            delay 3.0  -- Wait for the new page to load
-                        end tell
-                    end tell
-                    '''
-                
-            elif browser_name == "Brave":
-                # Focus on current tab
-                focus_script = f'''
-                tell application "Brave Browser"
-                    activate
-                    set active tab index of window 1 to {tab_index}
-                end tell
-                '''
-                
-                # Choose a random browsing pattern
-                pattern = random.choice(BROWSING_PATTERNS)
-                
-                if pattern == "quick_scan":
-                    # Quick scrolling down the page
-                    scroll_script = '''
-                    tell application "System Events"
-                        tell process "Brave Browser"
-                            key code 125 using {command down}  -- Page Down
-                            delay 0.5
-                            key code 125 using {command down}  -- Page Down again
-                            delay 0.5
-                        end tell
-                    end tell
-                    '''
-                elif pattern == "detailed_read":
-                    # Slow scrolling for detailed reading
-                    scroll_script = '''
-                    tell application "System Events"
-                        tell process "Brave Browser"
-                            key code 125 using {command down}  -- Page Down
-                            delay 2.0
-                            key code 126 using {command down}  -- Page Up
-                            delay 2.0
-                        end tell
-                    end tell
-                    '''
-                elif pattern == "search_mode":
-                    # Simulate Cmd+F searching behavior
-                    scroll_script = '''
-                    tell application "System Events"
-                        tell process "Brave Browser"
-                            keystroke "f" using {command down}  -- Open search
-                            delay 1.0
-                            keystroke "example"  -- Type search query
-                            delay 1.0
-                            key code 36  -- Press Enter
-                            delay 1.0
-                            key code 125 using {command down}  -- Page Down
-                            delay 1.0
-                            key code 126 using {command down}  -- Page Up
-                            delay 1.0
-                        end tell
-                    end tell
-                    '''
-                elif pattern == "click_links":
-                    # Simulate clicking on links
-                    scroll_script = '''
-                    tell application "System Events"
-                        tell process "Brave Browser"
-                            -- Click on a link (assuming the link is in the middle of the page)
-                            mouse click at {300, 500}
-                            delay 3.0  -- Wait for the new page to load
-                        end tell
-                    end tell
-                    '''
+            # Get the behavior script
+            behavior_script = get_browsing_behavior(browser_name, pattern)
             
             # Execute the scripts
             subprocess.run(["osascript", "-e", focus_script])
-            time.sleep(1.0)  # Longer pause after tab switch for slower pacing
-            subprocess.run(["osascript", "-e", scroll_script])
+            time.sleep(random.uniform(0.5, 1.2))  # Variable pause after tab switch
+            subprocess.run(["osascript", "-e", behavior_script])
             
-            # Move to next tab (cycle through all tabs)
+            # Move to next tab
             tab_index = (tab_index % num_tabs) + 1
             
-            # Wait longer before moving to next tab for slower browsing
-            time.sleep(4)
+            # Variable wait time based on pattern
+            wait_times = {
+                "detailed_read": random.uniform(4, 7),
+                "search_mode": random.uniform(3, 5),
+                "reload_page": random.uniform(4, 6),
+                "quick_scan": random.uniform(2, 4),
+                "link_navigation": random.uniform(3, 5),
+                "zoom_adjust": random.uniform(2, 4)
+            }
+            
+            wait_time = wait_times.get(pattern, 3)
+            time.sleep(wait_time)
+            
+            # Occasionally simulate back/forward navigation
+            if random.random() < 0.1:  # 10% chance
+                back_forward_script = f'''
+                tell application "System Events"
+                    tell process "{browser_name if browser_name == "Safari" else "Brave Browser"}"
+                        key code 123 using {{command down}}  -- Cmd+Left (Back)
+                        delay 1.5
+                        key code 124 using {{command down}}  -- Cmd+Right (Forward)
+                        delay 1.5
+                    end tell
+                end tell
+                '''
+                subprocess.run(["osascript", "-e", back_forward_script])
             
         except Exception as e:
             print(f"Error during browsing simulation: {e}")
             time.sleep(1)
     
-    print(f"Active browsing simulation completed for {browser_name}.")
+    print(f"Enhanced browsing simulation completed for {browser_name}.")
 
-# Run powermetrics and collect power data while simulating active browsing
 def run_powermetrics(browser_name, num_tabs):
+    """Run power monitoring while simulating browsing"""
     print(f"Running powermetrics for {browser_name}...")
     
-    # Start browsing simulation in a separate thread
+    # Start browsing simulation in separate thread
     browsing_thread = Thread(target=simulate_active_browsing, 
                            args=(browser_name, num_tabs, TAB_ACTIVITY_DURATION))
     browsing_thread.daemon = True
     browsing_thread.start()
     
-    power_readings = 0
-    
-    try:
-        with open(OUTPUT_FILE, "a") as f:
-            proc = subprocess.Popen(
-                ["sudo", "powermetrics", "-i", "1000", "--samplers", "cpu_power,gpu_power",
-                 "-a", "--hide-cpu-duty-cycle", "--show-usage-summary", "--show-extra-power-info"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                bufsize=1  # Line buffered
-            )
+    with open(OUTPUT_FILE, "a") as f:
+        proc = subprocess.Popen(
+            ["sudo", "powermetrics", "-i", "1000", "--samplers", "cpu_power,gpu_power",
+             "-a", "--hide-cpu-duty-cycle", "--show-usage-summary", "--show-extra-power-info"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
 
-            start_time = time.time()
-            
-            try:
-                while time.time() - start_time < POWERMETRICS_DURATION_SEC:
-                    # Use poll to check if process is still running
-                    if proc.poll() is not None:
-                        print("  Powermetrics process terminated unexpectedly")
-                        break
-                    
-                    try:
-                        # Set a timeout for readline to avoid hanging
-                        import select
-                        if select.select([proc.stdout], [], [], 1.0)[0]:  # 1 second timeout
-                            line = proc.stdout.readline()
-                            if line and "Combined Power (CPU + GPU + ANE):" in line:
-                                try:
-                                    # More robust parsing
-                                    power_part = line.split(":")[1].strip()
-                                    # Remove 'mW' and any other non-digit characters except numbers
-                                    power_value = ''.join(filter(str.isdigit, power_part))
-                                    if power_value:
-                                        value = int(power_value)
-                                        timestamp = int(time.time())
-                                        f.write(f"{browser_name},{timestamp},{value}\n")
-                                        f.flush()
-                                        power_readings += 1
-                                        if power_readings % 10 == 0:
-                                            print(f"  Collected {power_readings} power readings...")
-                                except (ValueError, IndexError) as e:
-                                    print(f"  Warning: Could not parse power value from line: {line.strip()}")
-                        else:
-                            # No output available, continue monitoring
-                            time.sleep(0.1)
-                            
-                    except Exception as e:
-                        print(f"  Error reading powermetrics output: {e}")
-                        time.sleep(0.5)
-                        
-            except KeyboardInterrupt:
-                print("\n  Powermetrics monitoring interrupted by user")
-            finally:
-                # Clean up process
-                try:
-                    proc.terminate()
-                    proc.wait(timeout=5)
-                except:
-                    proc.kill()
-                    
-    except Exception as e:
-        print(f"Error running powermetrics: {e}")
+        start_time = time.time()
+        power_readings = 0
         
-    # Wait for browsing simulation to complete
-    browsing_thread.join(timeout=10)
-    
-    print(f"powermetrics for {browser_name} finished. Collected {power_readings} readings.")
-    
+        while time.time() - start_time < POWERMETRICS_DURATION_SEC:
+            line = proc.stdout.readline()
+            if "Combined Power (CPU + GPU + ANE):" in line:
+                try:
+                    value = int(line.split(":")[1].strip().replace("mW", "").strip())
+                    timestamp = int(time.time())
+                    f.write(f"{browser_name},{timestamp},{value}\n")
+                    f.flush()
+                    power_readings += 1
+                    if power_readings % 15 == 0:
+                        print(f"  Collected {power_readings} power readings...")
+                except ValueError as e:
+                    print(f"  Warning: Could not parse power value: {line.strip()}")
+
+        proc.terminate()
+        proc.wait()
+        
+    browsing_thread.join(timeout=5)
     print(f"powermetrics for {browser_name} finished. Collected {power_readings} readings.")
 
-# Close all tabs in browser to clean up
 def close_browser_tabs(browser_name):
-    """Close all tabs in the specified browser"""
+    """Close all browser tabs and windows"""
     print(f"Closing tabs in {browser_name}...")
     try:
         if browser_name == "Safari":
@@ -436,48 +299,46 @@ def close_browser_tabs(browser_name):
     except Exception as e:
         print(f"Error closing tabs in {browser_name}: {e}")
 
-# Main benchmark loop
 def main():
+    """Main benchmark execution"""
     print("=== Enhanced Browser Power Benchmark ===")
-    print(f"Power monitoring duration: {POWERMETRICS_DURATION_SEC} seconds")
-    print(f"Active browsing duration: {TAB_ACTIVITY_DURATION} seconds")
+    print(f"Power monitoring: {POWERMETRICS_DURATION_SEC}s")
+    print(f"Active browsing: {TAB_ACTIVITY_DURATION}s")
+    print(f"Browsing patterns: {', '.join(BROWSING_PATTERNS)}")
     
+    # Load test sites
     sites = []
     with open(SITES_FILE, "r") as f:
         sites = [line.strip() for line in f if line.strip()]
     
-    print(f"Will test with {len(sites)} websites: {', '.join(sites[:3])}{'...' if len(sites) > 3 else ''}")
+    print(f"Testing with {len(sites)} websites")
 
-    # Prepare CSV output
+    # Initialize CSV
     with open(OUTPUT_FILE, "w") as f:
         f.write("Browser,Timestamp,Power(mW)\n")
 
+    # Test each browser
     for browser in BROWSERS.keys():
         print(f"\n=== Starting {browser} test ===")
         
-        # Close any existing tabs first
         close_browser_tabs(browser)
         time.sleep(2)
         
-        # Open tabs with all sites
         open_tabs_in_browser(browser, sites)
-        print(f"Waiting 10 seconds for {browser} to fully load all tabs...")
-        time.sleep(10)  # Increased wait time for all tabs to load
+        print(f"Waiting 12 seconds for {browser} to load content...")
+        time.sleep(12)
         
-        # Run the power measurement with active browsing
         run_powermetrics(browser, len(sites))
-        
-        # Clean up
         close_browser_tabs(browser)
         
         print(f"=== Finished {browser} test ===")
-        if browser != list(BROWSERS.keys())[-1]:  # Don't wait after the last browser
+        if browser != list(BROWSERS.keys())[-1]:
             print("Waiting 15 seconds before next browser...")
             time.sleep(15)
 
-    print("\n=== Benchmark complete! ===")
+    print("\n=== Enhanced Benchmark Complete! ===")
     print(f"Results saved to {OUTPUT_FILE}")
-    print("The browser tabs were actively used during testing for more realistic power measurements.")
+    print("Advanced browsing patterns were used for realistic power measurements.")
 
 if __name__ == "__main__":
     main()
